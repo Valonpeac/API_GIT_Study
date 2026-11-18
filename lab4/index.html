@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Laboratorium 4: grupowanie polskich artykułów metodą TF-IDF i K-Means, z działającym API i symulatorem centroidów.">
+<title>Lab 04 · Redakcja bez etykiet · ISI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=Unbounded:wght@400;600;800&display=optional" rel="stylesheet">
+<style>
+:root{--blue:#172ab8;--cream:#fff7e5;--ink:#11207e;--acid:#efff56;--orange:#fb683c;--line:#c3c9ee;--mono:'DM Mono',monospace;--head:'Unbounded',sans-serif;--body:'Space Grotesk',sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--cream);color:var(--ink);font:19px/1.6 var(--body)}a{color:inherit}button,textarea{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,textarea:focus-visible{outline:3px solid var(--orange);outline-offset:4px}::selection{background:var(--acid);color:var(--blue)}
+.top{position:sticky;top:0;z-index:20;background:var(--cream);border-bottom:2px solid var(--blue)}.top .inner{max-width:1260px;margin:auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{font:800 15px var(--head);text-decoration:none}.brand span{background:var(--blue);color:white;padding:7px}.top nav{display:flex;gap:20px;flex-wrap:wrap}.top nav a{font:500 15px var(--mono);text-decoration:none;text-transform:uppercase}.top nav a:hover{text-decoration:underline}
+.hero{background:var(--blue);color:var(--cream);min-height:600px;position:relative;overflow:hidden;border-bottom:9px solid var(--acid)}.hero::after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 23px,rgba(255,255,255,.05) 24px 25px),repeating-linear-gradient(90deg,transparent 0 23px,rgba(255,255,255,.05) 24px 25px);mask-image:linear-gradient(90deg,transparent 20%,black)}.hero .inner{max-width:1260px;margin:auto;padding:86px 24px 110px;position:relative;z-index:1}.eyebrow{font:500 15px var(--mono);letter-spacing:.18em;text-transform:uppercase}.hero h1{font:800 clamp(50px,9vw,132px)/.93 var(--head);letter-spacing:-.075em;max-width:880px;margin:24px 0 32px;text-wrap:balance}.hero h1 em{font-style:normal;color:var(--acid)}.hero p{font-size:21px;max-width:650px;line-height:1.5}.hero .stamp{position:absolute;right:7%;top:17%;border:2px solid var(--cream);border-radius:50%;width:140px;height:140px;display:grid;place-items:center;text-align:center;font:500 14px/1.3 var(--mono);transform:rotate(14deg);background:var(--orange);color:var(--blue);box-shadow:10px 10px 0 var(--acid)}.hero .numbers{display:flex;gap:24px;flex-wrap:wrap;margin-top:60px;font:500 15px var(--mono);text-transform:uppercase}.hero .numbers b{display:block;font:800 32px var(--head);margin-bottom:4px}.hero .numbers span{border-left:2px solid var(--acid);padding-left:12px}
+.ticker{background:var(--acid);color:var(--blue);border-bottom:2px solid var(--blue);overflow:hidden;white-space:nowrap;font:600 14px var(--mono);padding:10px 0;text-transform:uppercase}.ticker span{display:inline-block;animation:slide 25s linear infinite}@keyframes slide{to{transform:translateX(-50%)}}
+main section{padding:84px 24px;border-bottom:2px solid var(--blue);scroll-margin-top:70px}.wrap{max-width:1180px;margin:auto}.kicker{font:500 15px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--blue);margin:0 0 18px}.section-title{font:800 clamp(33px,5vw,68px)/1.03 var(--head);letter-spacing:-.065em;margin:0 0 26px;max-width:880px}.lede{font-size:21px;max-width:820px;margin:0 0 35px}.two{display:grid;grid-template-columns:1fr 1fr;gap:30px}.box{border:2px solid var(--blue);padding:24px;background:#fffdf5;box-shadow:8px 8px 0 var(--line)}.box h3{font:700 22px var(--head);letter-spacing:-.04em;margin:0 0 10px}.box p{margin:0}.box ul{margin:10px 0 0;padding-left:23px}.brief{background:#e5e9ff}.brief .box{background:var(--blue);color:white;box-shadow:12px 12px 0 var(--orange)}.brief .box h3{color:var(--acid)}
+.demo{background:var(--acid)}.demo-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.8fr);gap:28px}.plot{background:var(--blue);padding:14px;border:2px solid var(--blue);box-shadow:10px 10px 0 var(--orange);min-width:0}canvas{display:block;width:100%;height:auto;aspect-ratio:690/420;background:#fffef1}.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.btn{background:var(--blue);color:white;border:2px solid var(--blue);padding:12px 16px;font:600 15px var(--mono);text-transform:uppercase;transition:transform .15s,box-shadow .15s}.btn:hover{transform:translate(-3px,-3px);box-shadow:4px 4px 0 var(--orange)}.btn.alt{background:transparent;color:var(--blue)}
+.btn:disabled{opacity:.42;cursor:not-allowed;transform:none!important;box-shadow:none!important;filter:grayscale(.4)}.demo .note{font:15px var(--mono);margin-top:15px}.demo aside{background:#fffef1;border:2px solid var(--blue);padding:24px}.demo aside h3{font:800 24px var(--head);line-height:1.2;margin:0 0 12px}.demo aside strong{color:#bd3b20}.demo aside p{margin:0 0 16px}.step-num{display:inline-grid;place-items:center;background:var(--orange);color:var(--blue);border-radius:50%;width:32px;height:32px;font:600 15px var(--mono)}
+.steps{display:grid;gap:26px}.step{display:grid;grid-template-columns:90px minmax(0,1fr);gap:22px;align-items:start}.step>b{font:800 38px var(--head);line-height:1;color:var(--orange)}.step .content{border-top:2px solid var(--blue);padding-top:16px}.step h3{font:700 23px var(--head);letter-spacing:-.04em;margin:0 0 8px}.step p{margin:0 0 13px}.step details{border-left:4px solid var(--orange);padding:8px 14px;background:#f0efff;margin-top:15px}.step summary{cursor:pointer;font-weight:700}.code-head{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--blue);color:white;padding:8px 14px;font:15px var(--mono)}.copy{background:none;border:1px solid white;color:white;padding:4px 9px;font:inherit}.code{margin:0;background:#111949;color:#e9f2ff;padding:20px;overflow:auto;font:16px/1.6 var(--mono);tab-size:4}.code.wrap-code{white-space:pre-wrap;overflow-wrap:anywhere}.inline{font:15px var(--mono);background:#e6e9ff;padding:2px 5px}
+.challenge{background:var(--orange);color:#18236b}.challenge .box{background:var(--cream);box-shadow:12px 12px 0 var(--blue)}.challenge li{margin:10px 0}.res-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.res-grid a{display:block;text-decoration:none;border:2px solid var(--blue);padding:20px;background:white;transition:.2s}.res-grid a:hover{transform:translate(-4px,-4px);box-shadow:6px 6px 0 var(--orange)}.res-grid b{display:block;font:700 16px var(--head);margin-bottom:7px}.res-grid span{display:block;font-size:15px}
+.check{background:#e5e9ff}.check label{display:flex;gap:14px;align-items:flex-start;border-bottom:1px solid var(--line);padding:13px 0}.check input{width:20px;height:20px;accent-color:var(--blue);flex:none;margin-top:4px}.progress{height:14px;border:2px solid var(--blue);background:white;margin:18px 0}.progress div{height:100%;background:var(--orange);width:0;transition:width .25s}.quiz-item{padding:20px 0;border-top:2px solid var(--blue)}.quiz-item h3{font:700 17px var(--head);margin:0 0 14px}.answers{display:flex;gap:9px;flex-wrap:wrap}.answers button{background:white;color:var(--ink);border:2px solid var(--blue);padding:9px 12px}.answers button:hover{background:var(--acid)}.answers button.correct{background:#b7f0bd}.answers button.wrong{background:#ffc7ba}.feedback{min-height:25px;font-size:15px}.exit textarea{display:block;width:100%;min-height:170px;resize:vertical;padding:18px;background:#fffdf5;color:var(--ink);border:2px solid var(--blue)}.small{font:15px var(--mono)}footer{background:var(--blue);color:white;padding:30px 24px}footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px}footer a{color:var(--acid)}
+@media(max-width:760px){.top nav{display:none}.two,.demo-grid,.res-grid,.sim-grid{grid-template-columns:1fr}.step{grid-template-columns:1fr;gap:3px}.hero{min-height:0}.hero .inner{padding-top:65px}.hero h1{font-size:clamp(45px,13vw,75px)}.hero .numbers{gap:14px;margin-top:36px}main section{padding:62px 20px}}
+@media(max-width:1150px){.hero .stamp{display:none}}
+/* ---------- rytm pionowy · czytelne odstępy (wzorzec lab2) ---------- */
+section > * + * { margin-top: 0; }
+h3.sub-title { font: 700 23px var(--head); letter-spacing: -.04em; margin: 56px 0 18px; }
+h3.sub-title:first-child { margin-top: 8px; }
+/* ilustracja hero */
+.fig-ill { margin: 40px 0 12px; max-width: 960px; }
+.fig-ill img { display: block; width: 100%; height: auto; border-radius: 22px;
+  border: 2px solid var(--cream); box-shadow: 10px 10px 0 var(--orange); }
+.ill-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 6px; }
+.ill-tab { font: 600 15px var(--mono); text-transform: uppercase; letter-spacing: .06em;
+  padding: 9px 16px; border-radius: 999px; border: 2px solid var(--cream);
+  background: transparent; color: var(--cream); cursor: pointer; transition: all .2s; }
+.ill-tab:hover { border-color: var(--acid); color: var(--acid); }
+.ill-tab[aria-pressed="true"] { border-color: var(--acid); color: var(--blue); background: var(--acid); }
+.ill-note { margin: 10px 0 4px; padding: 14px 18px; border-left: 4px solid var(--acid);
+  background: rgba(239,255,86,.1); border-radius: 0 12px 12px 0;
+  color: var(--cream); font-size: 17px; min-height: 3.2em; }
+.ill-note strong { color: var(--acid); }
+/* własna próba: spójna karta zamiast gołej sekcji */
+#own-trial { padding: 48px 24px; max-width: 1160px; margin: auto; }
+#own-trial .trial-card { border: 2px solid var(--blue); border-radius: 14px;
+  background: #fffdf5; box-shadow: 8px 8px 0 var(--orange);
+  padding: 30px 32px; margin-top: 8px; }
+#own-trial .trial-card h2 { font: 700 26px var(--head); letter-spacing: -.04em; margin: 0 0 16px; }
+#own-trial .trial-card p { font-size: 17px; margin: 0; }
+#own-trial .trial-card p + p { margin-top: 14px; }
+@media print{.top,.ticker,.controls,.copy{display:none}.hero{min-height:0;background:white;color:black}.hero h1 em{color:black}main section{padding:20px 0;break-inside:avoid}.box,.plot{box-shadow:none}}
+.brief .box[style] h3{color:var(--ink)}
+.challenge .kicker{color:#101f66}.challenge .small strong{color:inherit}
+</style>
+<link rel="icon" href="../assets/favicon.svg">
+<style data-typo="1">:root{--acc:#fb683c;--acc2:#11207e}
+strong{color:var(--acc);font-weight:700}
+em{color:var(--acc2);font-style:italic}
+code{font-family:var(--mono);background:#ffe6d5;color:#a8380f;padding:.1em .45em;border-radius:6px}
+.lead{font-size:1.1rem;line-height:1.8}
+p+p{margin-top:16px}
+.box p,.field p{line-height:1.75}
+.challenge li{margin-bottom:16px;line-height:1.8}</style>
+<link rel="stylesheet" href="../assets/responsive.css">
+<link rel="stylesheet" href="../assets/code.css">
+<link rel="stylesheet" href="../assets/tab-icons.css">
+<script src="../assets/highlight.min.js" defer></script>
+<script src="../assets/code.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="inner"><a class="brand" href="../index.html"><span>ISI</span> / LAB 04</a><nav aria-label="Na tej stronie"><a href="#misja">Problem</a><a href="#demo">Symulator</a><a href="#kod">Kod</a><a href="#wyzwanie">Wyzwanie</a><a href="#sprawdz">Sprawdź się</a></nav></div></header>
+<div class="hero"><canvas id="hero-fx" aria-hidden="true"></canvas><div class="inner"><div class="eyebrow">Dossier 04 / uczenie bez etykiet / B.2 · EK_04</div><h1>Redakcja<br>bez <em>etykiet.</em></h1><p>Masz stos artykułów i żadnych kategorii.<br>Nauczysz komputer układać podobne teksty obok siebie, a potem sprawdzisz, czy ten porządek ma sens.</p>
+<div class="ill-tabs" role="group" aria-label="Kliknij etap schematu">
+<button class="ill-tab" data-ill="0" aria-pressed="true"><svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5"/><path d="M8 13h8M8 17h6"/></svg>1 · DOKUMENTY</button>
+<button class="ill-tab" data-ill="1" aria-pressed="false"><svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="18" r="2"/><path d="M8 7h8M7 8.6l4 7.6M17 8.6l-4 7.6"/></svg>2 · CENTROIDY</button>
+<button class="ill-tab" data-ill="2" aria-pressed="false"><svg class="tab-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="8" r="2"/><circle cx="13" cy="7" r="2"/><circle cx="9" cy="14" r="2"/><circle cx="18" cy="17" r="2"/><path d="M4 4l2 2M20 20l-1.5-1.5"/></svg>3 · KLASTRY</button>
+</div>
+<p class="ill-note" id="illNote">DOKUMENTY: każdy artykuł to jeden wiersz tabeli TF-IDF. IDF podnosi wagę słów rzadkich w zbiorze, a „oraz” usuwamy listą stop words (słów pomijanych).</p><div class="numbers"><span><b>40</b> artykułów</span><span><b>100</b> cech tekstu</span><span><b>5</b> klastrów do zbadania</span></div><div class="stamp" aria-hidden="true">DANE<br>≠<br>ETYKIETY</div></div></div>
+<div class="ticker" aria-hidden="true"><span>TF-IDF &nbsp; ● &nbsp; K-MEANS &nbsp; ● &nbsp; CENTROID &nbsp; ● &nbsp; INERTIA &nbsp; ● &nbsp; INTERPRETACJA &nbsp; ● &nbsp; TF-IDF &nbsp; ● &nbsp; K-MEANS &nbsp; ● &nbsp; CENTROID &nbsp; ● &nbsp; INERTIA &nbsp; ● &nbsp; INTERPRETACJA &nbsp; ● &nbsp;</span></div>
+<main>
+<aside class="course-start" aria-label="Jak pracować z laboratorium">
+<h2>Lab 04: od czego zacząć</h2>
+<p>Podzielisz artykuły na grupy i opiszesz, co je łączy.</p>
+<div class="first-try" style="--term-accent:#8a97a0"><h3>Rozgrzewka z Lab 03 · Collaborative filtering</h3><p class="try-question">Na czym opiera się collaborative filtering i co to cold start? Odpowiedz z pamięci, potem sprawdź.</p><details><summary>Sprawdź odpowiedź</summary><p>Na ocenach użytkowników, nie na treści: szukasz osób o podobnym guście i ważysz ich odchylenia od średniej. Cold start to brak historii ocen nowego użytkownika: nie ma z czego wyznaczyć podobieństwa.</p></details></div>
+<div class="first-try" style="--term-accent:#4ba69b"><h3>Dokąd przesuwa się środek grupy?</h3><p><dfn>Centroid</dfn> to średnia pozycja punktów przypisanych do grupy. K-Means na przemian przypisuje punkty do najbliższego centroidu i oblicza środki grup od nowa.</p><figure class="lab-sketch"><figcaption>Gdzie stanie środek grupy?</figcaption><svg viewBox="0 0 320 132" role="img" aria-label="Oś od 1 do 7 z dwoma punktami w pozycjach 2 i 6."><text x="12" y="25" class="key">JEDNA GRUPA · DWA PUNKTY</text><path d="M27 69 L291 69" class="ink-line"/><circle cx="27" cy="69" r="2" class="ink-dot"/><text x="23" y="101" class="">1</text><circle cx="71" cy="69" r="8" class="ink-dot"/><text x="67" y="101" class="">2</text><circle cx="115" cy="69" r="2" class="ink-dot"/><text x="111" y="101" class="">3</text><circle cx="159" cy="69" r="2" class="ink-dot"/><text x="155" y="101" class="">4</text><circle cx="203" cy="69" r="2" class="ink-dot"/><text x="199" y="101" class="">5</text><circle cx="247" cy="69" r="8" class="ink-dot"/><text x="243" y="101" class="">6</text><circle cx="291" cy="69" r="2" class="ink-dot"/><text x="287" y="101" class="">7</text></svg></figure><p class="try-question">Dwa punkty jednej grupy leżą na osi w pozycjach 2 i 6. Gdzie znajdzie się centroid po aktualizacji?</p><details><summary>Sprawdź odpowiedź</summary><p>W pozycji 4, bo (2 + 6) / 2 = 4. W demonstracji punkty mają dwie współrzędne. Obliczasz średnią dla każdej z nich osobno. Tak samo działa to dla cech tekstu w macierzy TF-IDF. <a href="#demo">Przejdź do demonstracji</a>.</p></details></div>
+<div class="start-tasks"><h3>Zadania do wykonania</h3><ol>
+<li><a href="#demo"><strong>Prześledź jedną iterację.</strong></a> W symulatorze jedna iteracja to dwa kroki: przypisanie punktów i przesunięcie środków. Zanim środek się przesunie, przewidź kierunek jego ruchu. Sprawdź, jak przypisane punkty wpływają na nowy środek.</li>
+<li><a href="#kod"><strong>Pogrupuj 40 artykułów.</strong></a> Zamień tytuły i treść na wektory TF-IDF. Zacznij od 100 cech i pięciu grup. Kolumnę <code>source</code> zachowaj do oceny. Dla jednej grupy przeczytaj sześć wyróżniających ją słów i zaproponuj nazwę. Np. słowa „trening, zawodnicy, wynik” pasują do nazwy „Sport”.</li>
+<li><a href="#kod"><strong>Sprawdź serwer.</strong></a> Pobierz listę grup przez <code>/api/clusters</code>. Otwórz szczegóły jednej z nich (np. <code>/api/clusters/0</code>), a następnie sprawdź odpowiedź dla nieistniejącej grupy 99 (HTTP 404). Odczytaj dane wykresu z <code>/api/elbow</code>.</li>
+<li><a href="#wyzwanie"><strong>Porównaj ustawienia.</strong></a> Uruchom <code>py eksperyment.py</code>. Porównaj warianty z limitem 100 i 300 cech przy tym samym <code>min_df</code> (minimalnej liczbie dokumentów, w których słowo występuje). Zapisz rzeczywistą liczbę cech oraz ARI, czyli miarę zgodności grup z kategoriami źródłowymi. Uzasadnij wybór liczby grup na podstawie wykresu i treści artykułów.</li>
+</ol>
+<p class="start-note">Do oddania przygotuj <code>cluster.py</code>, <code>app.py</code> i notatkę z wybranym <code>k</code> oraz wynikami.</p>
+</div>
+<p>Rozpakuj cały kurs. W katalogu <code>lab4</code> uruchom <code>py app.py</code> i otwórz adres wypisany w terminalu. Instrukcję przygotowania środowiska znajdziesz w <a href="#kod">sekcji z kodem</a>.</p>
+<div class="files"><a href="articles.csv" download>articles.csv</a> <a href="cluster.py" download>cluster.py</a> <a href="eksperyment.py" download>eksperyment.py</a> <a href="app.py" download>app.py</a> <a href="../kurs.zip" download>Pobierz cały kurs (ZIP)</a> <a href="../requirements.txt" download>Zależności podstawowe</a> <a href="../index.html#laby">Wszystkie laboratoria</a></div>
+</aside>
+<section id="misja" class="brief"><div class="wrap"><p class="kicker">01 / zgłoszenie z redakcji</p><h2 class="section-title">Porządek<br>bez ręcznego tagowania</h2><div class="two"><div class="box"><h3>Wiadomość od wydawcy</h3><p>„Teksty wpadają szybciej, niż redaktorzy zdążą je porządkować. Chcę zobaczyć grupy podobnych artykułów i kilka słów, które tłumaczą każdą grupę. Pokażcie mi to przez API”.</p></div><div class="box" style="background:var(--cream);color:var(--ink)"><h3>Twoja robota</h3><ul><li>Wczytaj <a href="articles.csv" download>40 polskich artykułów</a>. Kolumna <code>source</code> służy dopiero do kontroli wyniku, nie do uczenia.</li><li>Zamień tekst na TF-IDF, uruchom K-Means i nazwij grupy po słowach, nie po numerach.</li><li>Udostępnij klastry i dane wykresu przez Flask.</li></ul></div></div></div><div class="explain"><p>Uczenie bez etykiet znaczy tyle: model dostaje same cechy, bez gotowych odpowiedzi. Nie wie, że teksty pochodzą z pięciu działów redakcji. Widzi tylko wektory słów. Twoim zadaniem jest <em>odkrycie struktury</em>, która w danych już jest.</p><p>W Lab 2 porównywałeś opisy filmów, a w Lab 3 korzystałeś z ocen użytkowników. Tutaj grupujesz teksty bez podawania modelowi ich kategorii. Liczbę grup k wybierasz sam, a wynik sprawdzasz dopiero po treningu. Kolumna <code>source</code> służy wtedy wyłącznie do sprawdzenia podziału. Najpierw liczysz, potem sprawdzasz.</p><p>Redaktor potrzebuje prostych rzeczy: <em>co</em> łączy teksty w grupie, <em>ile</em> ich jest i <em>który</em> tekst do grupy nie pasuje. W tym labie robisz dwa pierwsze kroki. Trzeci krok zostawiasz na Lab 5.</p></div></section>
+
+<section id="demo" class="demo"><div class="wrap"><p class="kicker">02 / dotknij algorytmu</p><h2 class="section-title">Centroidy<br>ruszają się do pracy</h2><p class="lede">Intuicja jest prosta: podziel punkty na k kupek tak, żeby w każdej było blisko do środka. To osobna symulacja 2D. Kropki to nie są prawdziwe wektory artykułów. Pokazują tylko regułę K-Means: przypisz punkt do najbliższego środka, potem przesuń środek do średniej.</p><div class="demo-grid"><div><div class="plot"><canvas id="plot" width="690" height="420" role="img" aria-label="Dwuwymiarowa symulacja K-Means z trzydziestoma punktami i trzema centroidami"></canvas></div><div class="controls"><button class="btn" id="next" type="button">Wykonaj krok →</button><button class="btn" id="finish" type="button">Do zbieżności ▶▶</button><button class="btn alt" id="reset" type="button">Od nowa</button></div><p class="note" id="sim-note">Klikaj krok po kroku. Przycisk wyłączy się sam, gdy algorytm osiągnie stabilny podział.</p><div class="sim-legend" id="cluster-legend" aria-live="polite"></div></div><aside aria-live="polite"><h3><span class="step-num" id="step-number">0</span> <span id="step-title">Punkty czekają</span></h3><p id="step-text">Start: wybrano 3 środki z danych przez k-means++. Kliknij „Wykonaj krok”.</p><p class="small" id="step-detail">Kroki: 0 · klastry: brak · inercja: brak</p><p>W prawdziwym zadaniu odległość liczymy w przestrzeni 100 cech TF-IDF. Rzut na dwie osie (spłaszczenie do 2D) może mylić sąsiedztwo.</p><p class="small">K-Means zawsze przydziela punkt do jakiegoś klastra. W następnym labie zobaczysz metodę, która umie powiedzieć „szum”.</p></aside></div></div><div class="sim-extra"><div class="sim-grid">
+<div class="sim-card"><h3>Regulator: ile środków?</h3>
+<label for="k-range">Liczba centroidów k = <b id="k-value">3</b></label>
+<input id="k-range" type="range" min="1" max="8" value="3" step="1">
+<p class="small">Przeciągnij suwak albo kliknij słupek na wykresie obok. Zmiana k uruchamia symulację od nowa. W <code>KMeans</code> to samo robi zmiana <code>n_clusters</code>.</p>
+<div class="metric"><b id="inertia-value">brak</b><span>inercja symulacji w px² · im mniej, tym ciaśniejsze kupki</span></div>
+<p class="small" id="pick-info">Kliknij kropkę na rysunku. Od razu zobaczysz, do którego środka ma najbliżej.</p>
+</div>
+<figure class="sim-card fig-elbow"><h3>Wykres łokcia (elbow)</h3>
+<div class="elbow" id="elbow" role="group" aria-label="Wykres łokcia: długość słupka to inercja dla danego k, od k=2 do k=8"></div>
+<details class="small"><summary>Odczytaj dokładne wartości (k → inercja, spadek)</summary><table class="elbow-data"><thead><tr><th scope="col">k</th><th scope="col">Inercja (px²)</th><th scope="col">Spadek względem k−1</th></tr></thead><tbody id="elbow-values"></tbody></table></details>
+<figcaption class="small">Poziomy słupek to inercja dla danego k. Oś zaczyna się od k=2, bo przy k=1 cała chmura jest jednym klastrem i pierwszy słupek zdominowałby skalę. Kolumna „Spadek” mówi, o ile procent spadła inercja względem poprzedniego k: trzeci środek zmniejsza inercję o 86%, czwarty już tylko o 15%. To jest łokieć: od tego miejsca dodatkowy centroid przestaje odkrywać strukturę. Schemat używa 30 punktów 2D, nie artykułów z <a href="articles.csv" download><code>articles.csv</code></a>. Przeglądarka liczy najlepszy z 12 startów, jak przy <code>n_init</code>. Dokładne liczby tej symulacji są w tabeli. <code>/api/elbow</code> liczy inercję na artykułach z TF-IDF, więc zwraca inne wartości i inną skalę.</figcaption>
+</figure>
+</div>
+<h3 class="sub-title">Cztery kroki algorytmu</h3>
+<div class="steps">
+<article class="step"><b>01</b><div class="content"><h3>Start: środki w losowych miejscach</h3><p>W symulacji start jest ustalony (ziarno 42, czyli stała ustawiająca losowość), więc ten sam klik daje ten sam wynik. Kod Pythona używa domyślnego <code>init="k-means++"</code>: losowo wybiera punkty startowe, preferując punkty oddalone od już wybranych. Zły start daje słabe klastry, choć procedura działa bez błędu. Dlatego w kodzie jest <code>n_init=20</code>: model startuje 20 razy i zostawia najlepszy wynik.</p><p>Ziarno <code>random_state=42</code> nie poprawia wyniku. Ono tylko sprawia, że ten sam wynik da się powtórzyć. Bez ustalonego ziarna dwa uruchomienia mogą dać różne grupy.</p><div class="code-head"><span>dlaczego n_init i random_state</span><button class="copy" type="button" data-copy="c1b">Kopiuj</button></div><pre class="code" id="c1b" data-language="python">model = KMeans(n_clusters=5, n_init=20, random_state=42).fit(matrix)</pre><details><summary>Co by było bez n_init?</summary><p>Przy jednym starcie dwie kupki mogą dostać wspólny centroid, a jedna prawdziwa grupa zostanie przecięta. Wynik jest wtedy poprawny jako podział, ale bezużyteczny jako opis redakcji. <code>n_init</code> nie gwarantuje najlepszego możliwego podziału. Zmniejsza tylko ryzyko, że algorytm utknie w słabym podziale.</p></details></div></article>
+<article class="step"><b>02</b><div class="content"><h3>Przypisanie: każdy punkt szuka bliższego środka</h3><p>Dla każdego punktu liczymy odległość do każdego centroidu. Punkt dostaje kolor najbliższego centroidu. Algorytm zna tylko liczby, nie treść tekstu. Granica między klastrami leży tam, gdzie odległość do obu środków jest równa.</p><p>Odległość liczymy w 100 cechach TF-IDF, nie na ekranie. Rzut na dwie osie pomaga w pokazie, ale może mylić: punkty bliskie na rysunku bywają dalekie w 100 wymiarach.</p><details><summary>Skąd K-Means wie, że „blisko” to dobrze?</summary><p>W scikit-learn KMeans minimalizuje sumę kwadratów odległości euklidesowych (w linii prostej) i nie ma parametru <code>metric</code>. Nasze wektory TF-IDF mają normę L2 równą 1 (długość wektora = 1), więc między dwoma niezerowymi dokumentami zachodzi d² = 2(1 − cosine). Centroidy nie muszą mieć normy 1, dlatego zwykły K-Means nie jest tym samym co klastrowanie kosinusowe. W Lab 5 porównasz go z DBSCAN i aglomeracją używającymi <code>metric="cosine"</code>.</p></details><details><summary>Czy cechy trzeba skalować?</summary><p>K-Means liczy odległość euklidesową, więc cecha o szerszym zakresie dominuje. Tutaj każdy wiersz TF-IDF ma normę L2 równą 1, więc dokumenty są porównywalne. Przy surowych częstościach słów dłuższe teksty miałyby większe odległości i przesunęły centroidy. Wtedy potrzebna jest normalizacja wierszy albo standaryzacja kolumn (sprowadzenie do wspólnej skali).</p></details></div></article>
+<article class="step"><b>03</b><div class="content"><h3>Przesunięcie: środek idzie do średniej grupy</h3><p>Każdy centroid staje się średnią wektorów punktów w swoim kolorze. Powstaje nowy punkt w przestrzeni cech, który może mieć liczby, jakich nie ma żaden dokument.</p><p>W tej symulacji pusty centroid zostaje na miejscu. Implementacja scikit-learn może przenieść pusty centroid do punktu oddalonego od dotychczasowego środka, więc przebieg nie musi być identyczny.</p><details><summary>Czy centroid jest artykułem?</summary><p>Nie. Centroid to punkt w przestrzeni cech, nie dokument. Możesz go opisać największymi wagami. Zwykle nie odpowiada żadnemu dokumentowi, choć może się z nim pokryć, np. w klastrze z jednym artykułem. Dlatego grupę nazywasz przez <em>słowa centroida</em>, a nie przez „najbardziej typowy artykuł”.</p></details></div></article>
+<article class="step"><b>04</b><div class="content"><h3>Powtarzaj, aż nic się nie zmieni</h3><p>Przypisanie i przesuwanie idą na zmianę. Koniec jest wtedy, gdy w kolejnej rundzie żaden punkt nie zmienia klastra. To koniec liczenia, nie dowód najlepszego podziału. K-Means staje w miejscu, do którego doszedł.</p><p>Inercja to suma kwadratów odległości punktów od ich centroidów. Mniej znaczy ciaśniej, ale sama liczba nie dowodzi lepszego podziału. Porównuj kolejne k na tej samej macierzy cech jak na wykresie łokcia. Po zmianie słownika liczby znaczą co innego.</p><details><summary>Ile iteracji to „dość”?</summary><p>Liczba iteracji zależy od danych i początkowych centroidów. Scikit-learn zatrzymuje obliczenia także przy małym przesunięciu środków (<code>tol</code>) lub osiągnięciu <code>max_iter</code>. W symulatorze widać oba warunki: przycisk blokuje się, gdy żaden punkt nie zmienia klastra albo gdy środki przestają się przesuwać. Kolejne tury nie wniosłyby już nic nowego.</p></details></div></article>
+</div>
+<div class="explain narrow"><p>Wykres łokcia rysuje inercję dla kolejnych wartości k, od k=2. Najmniejsza możliwa inercja nie rośnie przy zwiększaniu k. Pojedyncze uruchomienia mogą jednak utknąć w różnych minimach lokalnych (słabszych podziałach), więc zmierzona krzywa nie musi być idealnie malejąca. Przy k równym liczbie punktów wynosi zero, bo każdy punkt ma własny środek.</p>
+<p>Łokieć to miejsce, gdzie <em>spadek robi się płaski</em>: nowe środki już nie odkrywają struktury, tylko tną grupy na kawałki.</p><p>Łokcia często nie widać. Na prawdziwych artykułach z <code>articles.csv</code> krzywa opada równo, a na tym schemacie 2D widać wyraźny uskok, bo grupy są sztucznie rozdzielone.</p><p>Sam wykres nie mówi, że k=5 jest jedyne słuszne. To pomysł do sprawdzenia słowami centroidu i stabilnością podziału. Gdy ktoś mówi „weź łokieć”, zapytaj: łokieć z jakiej miary i jakich cech, bo po zmianie <code>max_features</code> obraz się zmienia.</p></div>
+</div></section>
+<section id="kod"><div class="wrap"><p class="kicker">03 / od pliku do endpointu</p><h2 class="section-title">Zrób to na danych</h2><p class="lede">Pracujcie w parze: jedna osoba uruchamia i obserwuje wynik, druga zmienia parametry.<br>Przy każdym kroku zamieńcie się rolami.</p><div class="steps">
+<article class="step"><b>01</b><div class="content"><h3>Środowisko i pierwszy odczyt</h3><p>Najpierw poznaj dane: 40 wierszy, cztery kolumny, zero pustek. source to dział redakcji. Ta kolumna nigdy nie trafia do <code>fit_transform</code>, bo model uczyłby się odpowiedzi, a nie struktury tekstu. Przydaje się dopiero po treningu, do kontroli.</p><p>Policz, ile różnych wartości ma <code>source</code>. Ta liczba nie musi być najlepszym k. To punkt do sprawdzenia, nie gotowa odpowiedź.</p><div class="code-head"><span>terminal</span><button class="copy" type="button" data-copy="c1">Kopiuj</button></div><pre class="code" id="c1" data-language="bash">py -m pip install flask scikit-learn
+py cluster.py</pre><details><summary>Po co w danych jest source?</summary><p>To oznaczenie działu redakcji. Model go nie widzi. Możesz później porównać grupy modelu z działami, ale nie zakładaj, że numer klastra 0 oznacza konkretny dział.</p></details></div></article>
+<article class="step"><b>02</b><div class="content"><h3>Tekst zamieniasz na liczby</h3><p>Mechanizm jest prosty. TF liczy, jak często słowo występuje w artykule. IDF obniża wagę słów, które są prawie wszędzie. Iloczyn daje dużą wagę słowu rzadkiemu w zbiorze, a częstemu w jednym tekście (np. „procesor” w artykule o laptopach). Słowo obecne w wielu dokumentach dostaje niższe IDF. „oraz” usuwamy listą stop words (słów pomijanych), więc nie ma go w macierzy.</p><p>Wynik to nie zdanie, tylko <em>wektor wag</em>. Komputer nie rozumie polskiego, tylko porównuje liczby. Dwa teksty o tym samym temacie mogą wyjść odległe, jeśli używają innych słów. TF-IDF nie zna synonimów. Gdy zmienisz <code>max_features</code>, zmieniasz nie tylko liczbę kolumn, ale i <em>układ współrzędnych</em> do mierzenia odległości.</p><div class="code-head"><span>fragment cluster.py</span><button class="copy" type="button" data-copy="c2">Kopiuj</button></div><pre class="code" id="c2" data-language="python">vectorizer = TfidfVectorizer(
+    stop_words=STOP, max_features=100, min_df=2
+)
+matrix = vectorizer.fit_transform(
+    [f"{a['title']} {a['text']}" for a in articles]
+)
+print(matrix.shape)  # (40, 100)</pre><details><summary>Dlaczego używamy polskiej listy słów pomijanych?</summary><p>Teksty są po polsku. Lista <span class="inline">stop_words="english"</span> nie usunie „i”, „na”, „oraz”. W kodzie jest mała jawna lista polskich słów. W prawdziwym systemie wymagałaby osobnej oceny.</p></details></div></article>
+<article class="step"><b>03</b><div class="content"><h3>Model i słowa grupy</h3><p>Centroid grupy to średnia wektorów jej artykułów. Sześć największych wag to słowa, które „ciągną” grupę: rzadkie w całym zbiorze, a liczne w klastrze. To opis, nie nazwa. Numer klastra nie mówi, jaki to dział, dopóki tego nie sprawdzisz. Jeśli dwie grupy mają podobne słowa, k może być za duże. Może też być tak, że działy serio się pokrywają.</p><div class="code-head"><span>fragment cluster.py</span><button class="copy" type="button" data-copy="c3">Kopiuj</button></div><pre class="code" id="c3" data-language="python">model = KMeans(n_clusters=5, n_init=20, random_state=42).fit(matrix)
+words = vectorizer.get_feature_names_out()
+for i, center in enumerate(model.cluster_centers_):
+    print(i, [words[j] for j in center.argsort()[-6:][::-1]])</pre><details><summary>Skąd 5? Czy wykres łokcia to potwierdzi?</summary><p>Dane powstały z pięciu działów, więc 5 to pomysł do sprawdzenia. Większe k daje mniejszą inercję na tej samej tabeli. Na tych danych nie ma ostrego łokcia. Sam wykres nie dowodzi, że k=5 jest jedyne dobre.</p><p>Inercja (inertia) to suma kwadratów odległości punktów od środków ich grup. Centroid to średnia wektorów, nie wybrany artykuł. Słowa centroidu pomagają opisać grupę, ale nie są nazwą działu.</p></details><p>Uruchom <code>py eksperyment.py</code>. Plik <a href="eksperyment.py" download>eksperyment.py</a> trzymaj obok cluster.py i articles.csv. Skrypt porównuje trzy ustawienia. Sprawdza też inercję i to, że ARI nie zmienia się po przenumerowaniu klastrów.</p><details><summary>Jak czytać wynik porównania?</summary><p>Dla tego CSV: (100, min_df=2) daje 100 cech i ARI 1,000. (300, min_df=2) daje 119 cech i ARI 0,875. (300, min_df=1) daje 300 cech i ARI 0,591. Parametr max_features to limit, nie obietnica liczby cech. ARI mówi, czy podziały są zgodne. Numery grup nie mają znaczenia.</p><p>Porównuj inercję dla różnych k na tej samej tabeli. Po zmianie słownika liczby znaczą co innego. Endpoint /api/elbow używa n_init=10, a model główny n_init=20, więc wynik dla k=5 może się różnić. Ziarno random_state pomaga powtórzyć wynik. Jeśli dobierasz parametry na source, nie nazywaj późniejszego ARI niezależnym testem.</p></details></div></article>
+<article class="step"><b>04</b><div class="content"><h3>API, które można sprawdzić</h3><p>Uruchom <a href="app.py" download>app.py</a>. Sprawdź listę, pojedynczy klaster i wykres inercji. Zapytanie o nieistniejący klaster (<code>/api/clusters/99</code>) musi zwrócić 404 z JSON.</p><div class="code-head"><span>terminal, drugi proces</span><button class="copy" type="button" data-copy="c4">Kopiuj</button></div><pre class="code" id="c4" data-language="bash">py app.py
+# w drugim terminalu:
+curl.exe http://127.0.0.1:5004/api/clusters
+curl.exe http://127.0.0.1:5004/api/clusters/0
+curl.exe http://127.0.0.1:5004/api/clusters/99
+curl.exe http://127.0.0.1:5004/api/elbow</pre><p>404 to tu dobra odpowiedź, nie błąd aplikacji. Tak ma kończyć się prośba o klaster, którego nie ma. Odpowiedź powinna zawierać komunikat o błędzie w JSON, nie pustą listę. Sprawdź też, że <code>/api/elbow</code> zwraca co najmniej pięć par k i inercja. Mniej znaczy, że pętla w kodzie się skróciła.</p></div></article>
+</div></div></section>
+<section id="wyzwanie" class="challenge"><div class="wrap"><p class="kicker">04 / zadanie, które wymaga decyzji</p><h2 class="section-title">Kiedy liczba wygląda lepiej,<br>a wynik gorzej?</h2><p class="small">Trzy zadania. W każdym sprawdzasz, kiedy wynik liczbowy wygląda lepiej, choć grupy nie stają się lepsze. Najpierw ustalcie w parze, <em>jaką</em> miarą mierzycie zmianę. Inaczej porównacie tylko wrażenia. Z sekcji <a href="#kod">03</a>: inercję porównujcie na tej samej tabeli, a ARI tylko do etykiet, których model nie widział.</p><div class="box"><ol><li>Zmień <span class="inline">max_features</span> ze 100 na 300. Porównaj liczbę cech i przykładowe klastry. Czy grupy są równie czytelne?</li><li>Policz <span class="inline">adjusted_rand_score</span> między <span class="inline">source</span> a <span class="inline">labels_</span>. Etykiety służą tu wyłącznie do oceny po treningu. Uzasadnij różnicę.</li><li>Narysuj wykres <span class="inline">k → inertia</span> z <span class="inline">/api/elbow</span> lub bezpośrednio w Pythonie. Zaznacz swój wybór k i zapisz, dlaczego sam wykres nie rozstrzyga sprawy.</li></ol><p><b>Jeśli starczy czasu:</b> dodaj własne dwa artykuły do CSV, uruchom model ponownie i zobacz, czy trafiły do oczekiwanych grup. Zapisz zmianę w Git.</p></div></div></section>
+<section id="linki"><div class="wrap"><p class="kicker">05 / dokumentacja, która się przyda</p><h2 class="section-title">Gdzie zajrzeć,<br>gdy wynik zaskoczy</h2><div class="res-grid"><a href="https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html" target="_blank" rel="noopener"><b>Grupowanie tekstów</b><span>Oficjalny przykład: różnica między reprezentacją tekstu a algorytmem.</span></a><a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html" target="_blank" rel="noopener"><b>TfidfVectorizer</b><span>Sprawdź min_df, max_features i sposób liczenia słownika.</span></a><a href="https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html" target="_blank" rel="noopener"><b>KMeans</b><span>Co znaczą n_init, labels_ i inertia_.</span></a><a href="https://scikit-learn.org/stable/modules/clustering.html" target="_blank" rel="noopener"><b>Przegląd metod klastrowania</b><span>Ograniczenia K-Means i wybór algorytmu do danych.</span></a></div></div></section>
+<section id="sprawdz" class="check"><div class="wrap"><p class="kicker">06 / przed zamknięciem repo</p><h2 class="section-title">Co umiesz pokazać?</h2><div class="two"><div><div id="checks"><label><input type="checkbox"><span>Model uruchomiony na 40 artykułach, widzę kształt macierzy.</span></label><label><input type="checkbox"><span>Potrafię wskazać linię z TF-IDF oraz linię z K-Means.</span></label><label><input type="checkbox"><span>Umiem wyjaśnić, dlaczego <code>source</code> nie jest cechą treningową.</span></label><label><input type="checkbox"><span>API zwraca 200 dla klastra 0 i 404 dla nieistniejącego.</span></label><label><input type="checkbox"><span>Dwa ustawienia liczby cech porównane, mam wniosek z wyniku.</span></label></div></div><div><div class="box"><b id="progress-label" class="small">0 / 5</b><div class="progress" aria-hidden="true"><div id="bar"></div></div><p>To lista kontroli dla Waszej pary (Definition of Done: co musi być gotowe, żeby oddać zadanie). Zapisuje się w tej przeglądarce.</p></div></div></div><div class="quiz-item"><h3>1. Co zawiera <code>model.labels_</code>?</h3><div class="answers" data-answer="1" data-note="Jedna liczba klastra na każdy artykuł. Numery same w sobie nie są nazwami tematów."><button type="button">Słowa każdego klastra</button><button type="button">Numer klastra dla każdego artykułu</button><button type="button">Wagi TF-IDF</button></div><p class="feedback" aria-live="polite"></p></div><div class="quiz-item"><h3>2. Dlaczego <code>source</code> nie trafia do <code>fit_transform</code>?</h3><div class="answers" data-answer="0" data-note="To byłaby podpowiedź z etykiety. Chcemy sprawdzić, co model wywnioskuje z samego tekstu."><button type="button">Zdradziłaby modelowi oczekiwany podział</button><button type="button">CSV nie obsługuje tekstu</button><button type="button">K-Means wymaga dokładnie dwóch kolumn</button></div><p class="feedback" aria-live="polite"></p></div><div class="quiz-item"><h3>3. Co mówi spadek inercji przy zwiększaniu k?</h3><div class="answers" data-answer="2" data-note="Więcej centroidów zwykle obniża inercję z definicji. Trzeba spojrzeć także na interpretację grup."><button type="button">Zawsze znaleźliśmy prawdziwą liczbę tematów</button><button type="button">Model nauczył się nowych etykiet</button><button type="button">Punkty są bliżej swoich centroidów</button></div><p class="feedback" aria-live="polite"></p></div><p class="small" id="quiz-score" aria-live="polite">Wynik: 0 / 3</p></div></section>
+<section id="own-trial"><div class="wrap"><div class="trial-card"><h2>Własna próba</h2><p>Weźcie dwa artykuły z jednego klastra. Zapiszcie przewidywanie, co je łączy. Dopiero potem uruchomcie <code>py eksperyment.py</code> i porównajcie przewidywanie ze słowami centroidu.</p><p>Sprawdźcie, czy ta zgodność wynika ze struktury danych, czy ze szczęśliwego startu. Zmieńcie <code>random_state</code> i powtórzcie. Jeśli podział się rozsypie, grupy nie są stabilne. Nie opisujcie ich wtedy jako działów redakcji.</p></div></div></section>
+<section class="exit"><div class="wrap"><p class="kicker">07 / bilet wyjściowy · notatka dla następnej zmiany</p><h2 class="section-title">Zapisz decyzję,<br>nie slogan</h2><p class="lede">Dokończ trzy zdania: „Wybraliśmy k = …, ponieważ…”, „Najmniej przekonujący klaster to…”,<br>„AI pomogło nam w…; sprawdziliśmy to przez…”.</p><label for="exit-notes" class="small">Wasza notatka, tylko w tej przeglądarce</label><textarea id="exit-notes" placeholder="Wybraliśmy…"></textarea><p class="small" id="save-status" aria-live="polite"></p></div></section>
+</main><footer><div class="wrap"><span>ISI / AW / laboratorium 04 / B.2 · EK_04</span><span><a href="../lab3/index.html">← Lab 3</a> &nbsp; <a href="../index.html">↑ Hub kursu</a> &nbsp; <a href="../lab5/index.html">Lab 5: kto jest szumem? →</a></span></div></footer>
+<script>
+(() => {
+  const canvas=document.getElementById('plot');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=690,H=420,KMIN=1,KMAX=8,RESTARTS=12;
+  const colors=['#fb683c','#172ab8','#189e8b','#c2185b','#0f7a4a','#8a5a00','#4a3aa8','#72503b'];
+  /* trzy zwarte skupiska po 10 punktów; układ jest stały, więc każdy klik daje ten sam obraz */
+  const bases=[[.22,.26],[.77,.30],[.52,.74]];
+  const points=Array.from({length:30},(_,i)=>{
+    const g=Math.floor(i/10),j=i%10,c=bases[g];
+    const a=j*2.399963+g*1.7,r=.135*Math.sqrt((j+.7)/10);
+    const jx=(((j*37)%11)/10-.5)*.018,jy=(((j*53)%7)/6-.5)*.03;
+    return [Math.min(.97,Math.max(.03,c[0]+Math.cos(a)*r*(H/W)+jx)),Math.min(.97,Math.max(.03,c[1]+Math.sin(a)*r+jy))];
+  });
+
+  const stepNumberEl=document.getElementById('step-number');
+  const stepTitleEl=document.getElementById('step-title');
+  const stepTextEl=document.getElementById('step-text');
+  const stepDetailEl=document.getElementById('step-detail');
+  const inertiaEl=document.getElementById('inertia-value');
+  const pickEl=document.getElementById('pick-info');
+  const kEl=document.getElementById('k-value');
+  const nextBtn=document.getElementById('next');
+  const finishBtn=document.getElementById('finish');
+  const resetBtn=document.getElementById('reset');
+  const legendEl=document.getElementById('cluster-legend');
+  const noteEl=document.getElementById('sim-note');
+  const elbowBox=document.getElementById('elbow');
+  const elbowValues=document.getElementById('elbow-values');
+  const kRange=document.getElementById('k-range');
+
+  /* ---------- geometria i K-Means 2D ---------- */
+  const dist2=(p,c)=>((p[0]-c[0])*W)**2+((p[1]-c[1])*H)**2;
+  const fmt=n=>Math.round(n).toLocaleString('pl-PL');
+  function plural(n,one,few,many){const r=n%100;if(n===1)return one;if(r>=2&&r<=4)return few;return many}
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296}}
+
+  /* k-means++ na 30 punktach: start zawsze jest jednym z punktów */
+  function seedCenters(k,rand){
+    const chosen=[Math.floor(rand()*points.length)];
+    while(chosen.length<k){
+      let total=0;
+      const d=points.map((p,i)=>{
+        if(chosen.indexOf(i)>=0)return 0;
+        let m=Infinity;
+        chosen.forEach(j=>{m=Math.min(m,dist2(p,points[j]))});
+        total+=m;return m;
+      });
+      let r=rand()*total,pick=-1;
+      for(let i=0;i<d.length;i++){r-=d[i];if(r<=0&&d[i]>0){pick=i;break}}
+      if(pick<0)pick=d.findIndex(v=>v>0);
+      if(pick<0)break;
+      chosen.push(pick);
+    }
+    return chosen.map(i=>points[i].slice());
+  }
+  function assign(cent){
+    return points.map(p=>{
+      let best=0,bd=Infinity;
+      for(let j=0;j<cent.length;j++){const d=dist2(p,cent[j]);if(d<bd){bd=d;best=j}}
+      return best;
+    });
+  }
+  function moveToMeans(cent,lab){
+    const out=[];let maxShift=0;const empty=[];
+    cent.forEach((c,j)=>{
+      const group=points.filter((_,i)=>lab[i]===j);
+      if(!group.length){empty.push(j);out.push(c.slice());return}
+      const nx=group.reduce((s,p)=>s+p[0],0)/group.length;
+      const ny=group.reduce((s,p)=>s+p[1],0)/group.length;
+      maxShift=Math.max(maxShift,Math.hypot((nx-c[0])*W,(ny-c[1])*H));
+      out.push([nx,ny]);
+    });
+    return {cent:out,maxShift,empty};
+  }
+  const inertiaOf=(cent,lab)=>points.reduce((s,p,i)=>s+dist2(p,cent[lab[i]]),0);
+
+  function converge(start){
+    let cent=start.map(c=>c.slice()),lab=null,maxShift=0;
+    for(let it=0;it<100;it++){
+      const next=assign(cent);
+      const same=lab&&next.every((l,i)=>l===lab[i]);
+      lab=next;
+      const m=moveToMeans(cent,lab);
+      cent=m.cent;maxShift=m.maxShift;
+      if(same||maxShift<0.01)break;
+    }
+    return {cent,labels:assign(cent),inertia:inertiaOf(cent,assign(cent)),maxShift};
+  }
+  const solved=new Map();
+  function solve(k){
+    if(solved.has(k))return solved.get(k);
+    let best=null;
+    for(let r=0;r<RESTARTS;r++){
+      const start=seedCenters(k,mulberry32(42+r*7919));
+      const run=converge(start);
+      if(!best||run.inertia<best.run.inertia)best={start,run};
+    }
+    solved.set(k,best);
+    return best;
+  }
+
+  /* ---------- stan symulacji ---------- */
+  let k=3,centers=[],labels=[],phase='assign',steps=0,changed=0,converged=false,selected=-1,running=false,tweenToken=0;
+
+  function sizes(){const s=new Array(centers.length).fill(0);labels.forEach(l=>{if(l>=0)s[l]++});return s}
+  function setStatus(title,text,detail){
+    stepNumberEl.textContent=String(steps);
+    stepTitleEl.textContent=title;
+    stepTextEl.textContent=text;
+    stepDetailEl.textContent=detail;
+  }
+  function showInertia(val){
+    const token=++tweenToken,from=Number(inertiaEl.dataset.shown||val);
+    inertiaEl.dataset.shown=String(val);
+    if(from===val||!isFinite(from)){inertiaEl.textContent=fmt(val);return}
+    inertiaEl.classList.remove('bump');void inertiaEl.offsetWidth;inertiaEl.classList.add('bump');
+    const t0=performance.now();
+    (function frame(now){
+      if(token!==tweenToken)return;
+      const p=Math.min(1,(now-t0)/450),e=1-Math.pow(1-p,3);
+      inertiaEl.textContent=fmt(from+(val-from)*e);
+      if(p<1)requestAnimationFrame(frame);
+    })(t0);
+  }
+  function refreshInertia(){
+    if(!labels.some(l=>l>=0)){tweenToken++;inertiaEl.textContent='brak';delete inertiaEl.dataset.shown;return}
+    showInertia(inertiaOf(centers,labels));
+  }
+  function renderLegend(){
+    if(!legendEl)return;
+    const s=sizes(),ready=labels.some(l=>l>=0);
+    legendEl.innerHTML='';
+    centers.forEach((_,i)=>{
+      const chip=document.createElement('span');chip.className='chip';
+      const dot=document.createElement('i');dot.style.background=colors[i%colors.length];
+      const txt=document.createTextNode('Środek '+(i+1)+': ');
+      const b=document.createElement('b');b.textContent=ready?(s[i]+' pkt'):'brak';
+      chip.append(dot,txt,b);legendEl.appendChild(chip);
+    });
+  }
+  function syncButtons(){
+    if(nextBtn){nextBtn.disabled=converged||running;nextBtn.textContent=converged?'Zbieżne ✓':'Wykonaj krok →'}
+    if(finishBtn)finishBtn.disabled=converged||running;
+    if(resetBtn)resetBtn.disabled=false;
+  }
+
+  /* ---------- rysowanie ---------- */
+  function nearest(p){
+    let best=0,bd=Infinity;
+    centers.forEach((c,j)=>{const d=dist2(p,c);if(d<bd){bd=d;best=j}});
+    return best;
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#fffef1';ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='#e4e7f7';ctx.lineWidth=1;
+    for(let x=35;x<W;x+=35){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(let y=35;y<H;y+=35){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+    /* obszary decyzyjne: punkt terenu dostaje kolor najbliższego środka */
+    const cell=6;
+    ctx.globalAlpha=.09;
+    for(let x=0;x<W;x+=cell){
+      for(let y=0;y<H;y+=cell){
+        const px=(x+cell/2)/W,py=(y+cell/2)/H;
+        let best=0,bd=Infinity;
+        centers.forEach((c,j)=>{const d=((px-c[0])*W)**2+((py-c[1])*H)**2;if(d<bd){bd=d;best=j}});
+        ctx.fillStyle=colors[best%colors.length];
+        ctx.fillRect(x,y,cell,cell);
+      }
+    }
+    ctx.globalAlpha=1;
+    if(selected>=0){
+      const p=points[selected],j=nearest(p),c=centers[j],px=p[0]*W,py=p[1]*H;
+      ctx.strokeStyle='#11207e';ctx.lineWidth=2;ctx.setLineDash([5,5]);
+      ctx.beginPath();ctx.arc(px,py,15,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+      ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(c[0]*W,c[1]*H);ctx.stroke();
+    }
+    points.forEach((p,i)=>{
+      const x=p[0]*W,y=p[1]*H,lab=labels[i];
+      ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);
+      ctx.fillStyle=lab>=0?colors[lab%colors.length]:'#c9cbe0';
+      ctx.fill();
+      if(lab<0){ctx.strokeStyle='#8d93b5';ctx.lineWidth=1.5;ctx.stroke()}
+      if(i===selected){ctx.strokeStyle='#11207e';ctx.lineWidth=2.5;ctx.stroke()}
+    });
+    centers.forEach((c,i)=>{
+      const x=c[0]*W,y=c[1]*H;
+      ctx.beginPath();ctx.arc(x,y,16,0,Math.PI*2);
+      ctx.fillStyle=colors[i%colors.length];ctx.fill();
+      ctx.lineWidth=3;ctx.strokeStyle='#fffef1';ctx.stroke();
+      ctx.fillStyle='#fffef1';ctx.font='700 14px "DM Mono",monospace';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(String(i+1),x,y+.5);
+    });
+  }
+
+  /* ---------- opis klikniętego punktu ---------- */
+  function describePoint(i){
+    const p=points[i],j=nearest(p),d=Math.round(Math.sqrt(dist2(p,centers[j])));
+    let msg='Punkt '+(i+1)+': najbliżej mu do środka '+(j+1)+' ('+d+' px).';
+    if(labels[i]>=0){
+      msg+=labels[i]===j
+        ? ' Tak przydzielił go ostatni krok.'
+        : ' W ostatnim przydziale był w klastrze '+(labels[i]+1)+'; po przesunięciu środków bliżej mu do '+(j+1)+'.';
+    }else{
+      msg+=' Kliknij „Wykonaj krok”, żeby zobaczyć pierwszy przydział.';
+    }
+    if(pickEl)pickEl.textContent=msg;
+  }
+
+  /* ---------- kroki ---------- */
+  function doStep(){
+    if(converged)return;
+    if(phase==='assign'){
+      const next=assign(centers);
+      const first=!labels.some(l=>l>=0);
+      changed=labels.reduce((s,l,i)=>s+(l===next[i]?0:1),0);
+      labels=next;steps++;
+      refreshInertia();renderLegend();draw();
+      if(!first&&changed===0){
+        converged=true;
+        setStatus('Koniec',"Żaden punkt nie zmienił klastra. To kryterium stopu K-Means: wynik jest już stabilny.",
+          'Kroki: '+steps+' · zmienione: 0 · inercja: '+fmt(inertiaOf(centers,labels))+' px²');
+        if(noteEl)noteEl.textContent='Koniec: przydział się nie zmienia. Zmień k suwakiem i sprawdź, czy nowe grupy mają sens.';
+      }else{
+        phase='move';
+        setStatus('Przypisanie',
+          'Każdy punkt dostał kolor najbliższego środka'+(first?' (pierwszy przydział)':'')+'. Kolor tła pokazuje, gdzie leży granica klastrów.',
+          'Kroki: '+steps+' · '+(first?'przypisano: '+points.length+' pkt':'zmienione: '+changed+' z '+points.length+' pkt')+' · inercja: '+fmt(inertiaOf(centers,labels))+' px²');
+      }
+    }else{
+      const m=moveToMeans(centers,labels);
+      centers=m.cent;steps++;
+      refreshInertia();renderLegend();draw();
+      if(m.maxShift<0.5){
+        converged=true;
+        setStatus('Koniec','Środki przestały się przesuwać. Algorytm osiągnął stabilny podział po '+steps+' '+plural(steps,'kroku','krokach','krokach')+'.',
+          'Kroki: '+steps+' · przesunięcie: '+m.maxShift.toFixed(1)+' px · inercja: '+fmt(inertiaOf(centers,labels))+' px²');
+        if(noteEl)noteEl.textContent='Koniec: środki stoją w miejscu. Zmień k suwakiem, żeby porównać inny podział.';
+      }else{
+        phase='assign';
+        setStatus('Przesunięcie',
+          'Każdy środek poszedł do średniej swoich punktów. Największa zmiana to '+Math.round(m.maxShift)+' px. Następny krok przydzieli punkty od nowa.',
+          'Kroki: '+steps+' · pusty klaster: '+(m.empty.length?m.empty.map(i=>i+1).join(', '):'brak')+' · inercja: '+fmt(inertiaOf(centers,labels))+' px²');
+      }
+    }
+    syncButtons();
+    if(selected>=0)describePoint(selected);
+  }
+
+  function reset(){
+    running=false;
+    const best=solve(k);
+    centers=best.start.map(c=>c.slice());
+    labels=points.map(()=>-1);
+    phase='assign';steps=0;changed=0;converged=false;selected=-1;
+    tweenToken++;
+    inertiaEl.textContent='brak';delete inertiaEl.dataset.shown;
+    stepNumberEl.textContent='0';
+    setStatus('Punkty czekają',
+      'Start: wybrano '+k+' '+plural(k,'środek','środki','środków')+' z danych przez k-means++. Kliknij „Wykonaj krok”.',
+      'Kroki: 0 · '+plural(k,'klaster','klastry','klastrów')+': '+k+' · inercja: brak');
+    if(pickEl)pickEl.textContent='Kliknij kropkę na rysunku. Od razu zobaczysz, do którego środka ma najbliżej.';
+    if(noteEl)noteEl.textContent='Klikaj krok po kroku. Przycisk wyłączy się sam, gdy algorytm osiągnie stabilny podział.';
+    canvas.setAttribute('aria-label','Symulacja K-Means: 30 punktów, '+plural(k,'centroid','centroidy','centroidów')+'. Kolory punktów to klastry, ponumerowane kółka to środki.');
+    syncButtons();renderLegend();draw();
+  }
+
+  function runToEnd(){
+    if(running||converged)return;
+    running=true;syncButtons();
+    const tick=()=>{
+      if(!running)return;
+      doStep();
+      if(converged||steps>60){running=false;syncButtons();return}
+      setTimeout(tick,500);
+    };
+    tick();
+  }
+
+  canvas.addEventListener('click',e=>{
+    const r=canvas.getBoundingClientRect();
+    const x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);
+    let best=-1,bd=18;
+    points.forEach((p,i)=>{const d=Math.hypot(p[0]*W-x,p[1]*H-y);if(d<bd){bd=d;best=i}});
+    selected=best;
+    draw();
+    if(best<0){if(pickEl)pickEl.textContent='Kliknij kropkę na rysunku. Od razu zobaczysz, do którego środka ma najbliżej.';return}
+    describePoint(best);
+  });
+  canvas.addEventListener('mousemove',e=>{
+    const r=canvas.getBoundingClientRect();
+    const x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);
+    const hit=points.some(p=>Math.hypot(p[0]*W-x,p[1]*H-y)<12);
+    canvas.style.cursor=hit?'pointer':'default';
+  });
+  if(nextBtn)nextBtn.addEventListener('click',()=>{if(running||converged)return;doStep()});
+  if(finishBtn)finishBtn.addEventListener('click',runToEnd);
+  if(resetBtn)resetBtn.addEventListener('click',reset);
+
+  function markBars(){
+    document.querySelectorAll('#elbow .bar').forEach(b=>b.classList.toggle('on',Number(b.dataset.k)===k));
+    if(kEl)kEl.textContent=k;
+  }
+  function setK(n){
+    k=Math.min(KMAX,Math.max(KMIN,n));
+    if(kRange)kRange.value=k;
+    markBars();reset();
+  }
+  if(kRange)kRange.addEventListener('input',()=>setK(Number(kRange.value)));
+
+  /* ---------- wykres łokcia: inercja dla kolejnych k (od k=2) ---------- */
+  if(elbowBox){
+    const series=[];
+    for(let n=KMIN;n<=KMAX;n++)series.push({k:n,inertia:solve(n).run.inertia});
+    let maxInertia=1;
+    for(let i=1;i<series.length;i++)maxInertia=Math.max(maxInertia,series[i].inertia);
+    if(elbowValues){
+      series.forEach((s,i)=>{
+        const row=elbowValues.insertRow();
+        row.insertCell().textContent=s.k;
+        row.insertCell().textContent=fmt(s.inertia);
+        row.insertCell().textContent=i===0?'brak':fmt(series[i-1].inertia-s.inertia);
+      });
+    }
+    series.forEach((s,i)=>{
+      if(i===0)return;
+      const drop=series[i-1].inertia-s.inertia;
+      const pct=Math.round(100*drop/series[i-1].inertia);
+      const b=document.createElement('button');
+      b.type='button';b.className='bar'+(s.k===k?' on':'');
+      b.dataset.k=s.k;
+      b.style.setProperty('--w',Math.max(2,100*s.inertia/maxInertia).toFixed(1)+'%');
+      b.style.animationDelay=(i*60)+'ms';
+      const label='Ustaw k = '+s.k+'. Inercja '+fmt(s.inertia)+' px², spadek o '+pct+'% względem k = '+(s.k-1)+'.';
+      b.setAttribute('aria-label',label);
+      b.title=label;
+      b.innerHTML='<span class="lbl">k='+s.k+'</span><span class="track"><span class="fill"></span></span><span class="val">'+fmt(s.inertia)+'</span><span class="delta">−'+pct+'%</span>';
+      b.addEventListener('click',()=>setK(s.k));
+      elbowBox.appendChild(b);
+    });
+  }
+  document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);b.textContent='Skopiowano'}catch{b.textContent='Zaznacz kod ręcznie'}setTimeout(()=>b.textContent='Kopiuj',1800)}));
+  const checkboxes=[...document.querySelectorAll('#checks input')],key='isi-lab4-checks';try{const saved=JSON.parse(localStorage.getItem(key)||'[]');checkboxes.forEach((c,i)=>c.checked=!!saved[i])}catch{}function update(){const n=checkboxes.filter(c=>c.checked).length;document.getElementById('progress-label').textContent=`${n} / ${checkboxes.length}`;document.getElementById('bar').style.width=`${100*n/checkboxes.length}%`;try{localStorage.setItem(key,JSON.stringify(checkboxes.map(c=>c.checked)))}catch{}}checkboxes.forEach(c=>c.addEventListener('change',update));update();
+  let score=0;document.querySelectorAll('.answers').forEach(group=>group.querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>{if(group.dataset.done)return;group.dataset.done='1';const good=i===Number(group.dataset.answer);b.classList.add(good?'correct':'wrong');group.querySelectorAll('button')[Number(group.dataset.answer)].classList.add('correct');group.nextElementSibling.textContent=group.dataset.note;if(good)score++;document.getElementById('quiz-score').textContent=`Wynik: ${score} / 3`})));
+  const notes=document.getElementById('exit-notes');try{notes.value=localStorage.getItem('isi-lab4-notes')||''}catch{}notes.addEventListener('input',()=>{try{localStorage.setItem('isi-lab4-notes',notes.value);document.getElementById('save-status').textContent='Zapisano lokalnie'}catch{document.getElementById('save-status').textContent='Nie udało się zapisać w tej przeglądarce'}});
+  document.querySelectorAll('.ill-tab').forEach(btn=>btn.addEventListener('click',()=>{const n=document.getElementById('illNote');if(!n)return;n.classList.remove('pop');void n.offsetWidth;n.classList.add('pop')}));
+  markBars();
+  reset();
+})();
+</script>
+<style>
+/* FX 04: pole klastrow w hero, pasek postepu, reveal */
+#hero-fx{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.85}
+.hero .inner{position:relative;z-index:1}
+#read-progress{position:fixed;top:0;left:0;height:4px;width:0;background:var(--acid);box-shadow:0 0 16px var(--acid);z-index:100}
+.fx main section{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.fx main section.in{opacity:1;transform:none}
+.hero .stamp{animation:stampIn 1s cubic-bezier(.2,1.4,.3,1) .3s backwards, stampFloat 6s ease-in-out 1.5s infinite}
+@keyframes stampIn{from{transform:rotate(40deg) scale(.2);opacity:0}}
+@keyframes stampFloat{50%{transform:rotate(10deg) translateY(-9px)}}
+
+/* ---------- Lab 4: suwak k, metryka inertii, wykres lokcia, klik punktu ---------- */
+#demo .step details{background:#fffdf5}
+.sim-extra{margin-top:34px}
+.sim-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(300px,1.1fr);gap:26px;align-items:start}
+.sim-card{background:#fffef1;border:2px solid var(--blue);padding:22px;box-shadow:8px 8px 0 var(--line)}
+.sim-card h3{font:800 22px var(--head);letter-spacing:-.04em;margin:0 0 12px}
+.sim-card label{display:block;font:600 15px var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.sim-card label b{font:800 30px var(--head);color:var(--orange);letter-spacing:0}
+.sim-card input[type=range]{width:100%;accent-color:var(--orange);height:28px;margin:0 0 4px}
+.sim-card .small{margin:10px 0 0}
+.metric{display:flex;gap:12px;align-items:baseline;margin-top:18px;border-top:2px solid var(--blue);padding-top:14px}
+.metric b{font:800 clamp(30px,4vw,44px) var(--head);color:var(--blue);line-height:1}
+.metric span{font:15px var(--mono);text-transform:uppercase;line-height:1.4}
+.metric b.bump{animation:tick .55s cubic-bezier(.2,1.5,.3,1)}
+@keyframes tick{0%{transform:scale(1)}35%{transform:scale(1.15);color:var(--orange)}100%{transform:scale(1)}}
+.fig-elbow{margin:0}.elbow-data{width:100%;border-collapse:collapse}.elbow-data th,.elbow-data td{text-align:right;padding:4px 6px;border-bottom:1px solid var(--blue)}.elbow-data th:first-child,.elbow-data td:first-child{text-align:left}
+.fig-elbow figcaption{margin:14px 0 0;line-height:1.6}
+.elbow{display:grid;gap:4px;padding:14px;border:2px solid var(--blue);background:#fffdf5}
+.elbow .bar{display:grid;grid-template-columns:46px minmax(0,1fr) 70px 46px;align-items:center;gap:9px;background:none;border:0;padding:4px 6px;text-align:left;transition:background .15s}
+.elbow .bar:hover{background:var(--acid)}
+.elbow .bar.on{background:var(--acid);box-shadow:inset 0 0 0 2px var(--orange)}
+.elbow .bar .lbl{font:700 14px var(--mono);color:var(--blue);white-space:nowrap}
+.elbow .bar.on .lbl{color:var(--orange)}
+.elbow .bar .track{display:block;height:20px;border:2px solid var(--blue);background:var(--cream);overflow:hidden}
+.elbow .bar .fill{display:block;height:100%;width:var(--w,0%);background:var(--blue);animation:fillGrow .8s cubic-bezier(.2,.9,.25,1) backwards}
+.elbow .bar:hover .fill,.elbow .bar.on .fill{background:var(--orange)}
+.elbow .bar .val{font:13px var(--mono);text-align:right;white-space:nowrap}
+.elbow .bar .delta{font:12px var(--mono);text-align:right;color:#5b64a8;white-space:nowrap}
+.elbow .bar.on .delta{color:#a8380f}
+@keyframes fillGrow{from{width:0}to{width:var(--w,0%)}}
+/* legenda klastrów pod symulatorem */
+.sim-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.sim-legend .chip{display:inline-flex;align-items:center;gap:7px;border:2px solid var(--blue);background:#fffef1;padding:4px 10px;font:13px var(--mono);text-transform:uppercase}
+.sim-legend .chip i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--blue);flex:none}
+.sim-legend .chip b{font-weight:600}
+#step-detail{border-top:2px solid var(--blue);padding-top:10px;margin-top:2px!important;color:#3a4595}
+.explain{border:2px solid var(--blue);background:#fffdf5;box-shadow:8px 8px 0 var(--line);padding:26px 28px;margin-top:34px}
+.explain.narrow{max-width:900px}
+#demo .explain{box-shadow:8px 8px 0 var(--orange)}
+.explain p+p{margin-top:16px}
+.sub-title+.explain{margin-top:8px}
+.explain+.steps{margin-top:26px}
+#demo .steps{margin-top:8px}
+#demo .step .content{background:#fffef1;padding:18px 20px 20px;border:2px solid var(--blue);box-shadow:8px 8px 0 var(--line)}
+#demo .step>.content>p+p{margin-top:16px}
+.ill-note.pop{animation:illPop .45s cubic-bezier(.2,1.4,.3,1)}
+@keyframes illPop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+/* mobile: te reguły muszą być po definicjach .sim-grid i .elbow */
+@media(max-width:760px){
+  .sim-grid{grid-template-columns:1fr}
+  .elbow{padding:10px}
+  .elbow .bar{grid-template-columns:38px minmax(0,1fr) 58px;gap:6px}
+  .elbow .bar .delta{display:none}
+  .elbow .bar .val{font-size:12px}
+}
+/* koniec bloku Lab 4 */
+</style>
+<div id="read-progress" aria-hidden="true"></div>
+<script>
+/* FX 04: kropki dryfuja do trzech centroidow - metafora K-Means */
+(function(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cv=document.getElementById('hero-fx');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const COLORS=['#fff7e5','#efff56','#fb683c'];
+  let W,H,dots=[],centroids=[];
+  function resize(){
+    W=cv.width=cv.offsetWidth;H=cv.height=cv.offsetHeight;
+    centroids=[0,1,2].map(i=>({x:W*(.18+.32*i)+Math.random()*40,y:H*(.3+Math.random()*.4),a:Math.random()*6.28,r:60+Math.random()*80,s:.0018+Math.random()*.0012}));
+    dots=Array.from({length:42},(_,i)=>({c:i%3,x:Math.random()*W,y:Math.random()*H,ox:(Math.random()-.5)*90,oy:(Math.random()-.5)*90}));
+  }
+  resize();addEventListener('resize',resize);
+  function tick(t){
+    ctx.clearRect(0,0,W,H);
+    centroids.forEach(c=>{c.x+=Math.cos(t*c.s+c.a)*.5;c.y+=Math.sin(t*c.s*1.3+c.a)*.4;});
+    dots.forEach(d=>{
+      const c=centroids[d.c];
+      d.x+=(c.x+d.ox-d.x)*.012;d.y+=(c.y+d.oy-d.y)*.012;
+      ctx.fillStyle=COLORS[d.c];ctx.globalAlpha=.75;
+      ctx.beginPath();ctx.arc(d.x,d.y,2.6,0,6.28);ctx.fill();
+    });
+    ctx.globalAlpha=.16;ctx.strokeStyle='#fff7e5';ctx.lineWidth=1.4;
+    centroids.forEach(c=>{ctx.beginPath();ctx.arc(c.x,c.y,26,0,6.28);ctx.stroke();});
+    ctx.globalAlpha=1;
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+/* pasek postepu + reveal */
+(function(){
+  document.documentElement.classList.add('fx');
+  const bar=document.getElementById('read-progress');
+  addEventListener('scroll',()=>{const m=document.documentElement.scrollHeight-innerHeight;bar.style.width=(m>0?scrollY/m*100:0)+'%';},{passive:true});
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.08});
+  document.querySelectorAll('main section').forEach(s=>io.observe(s));
+})();
+</script>
+<script>
+/* ilustracja: klikane etapy DOKUMENTY / CENTROIDY / KLASTRY (wzorzec lab2) */
+(function(){
+  var ILL = [
+    "<strong>DOKUMENTY:</strong> każdy artykuł to wiersz macierzy TF-IDF. Rzadkie słowo waży więcej niż „oraz”.",
+    "<strong>CENTROIDY:</strong> średnia wektorów grupy, nie wybrany artykuł. K-Means na zmianę przypisuje punkty i przesuwa środki.",
+    "<strong>KLASTRY:</strong> grupę nazywamy słowami centroidu, nie numerem. Kolumna source służy dopiero do kontroli wyniku."
+  ];
+  var note = document.getElementById("illNote");
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".ill-tab"));
+  if (note && tabs.length) {
+    tabs.forEach(function(btn){
+      btn.addEventListener("click", function(){
+        tabs.forEach(function(b){ b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+        note.innerHTML = ILL[+btn.getAttribute("data-ill")] || ILL[0];
+      });
+    });
+  }
+})();
+</script>
+<script data-pi="1">
+(function(){
+var SEL='.question[data-answer],fieldset.question[data-answer],.q [data-answer],.quiz-pytanie[data-poprawna],.answers[data-correct],.answers[data-answer]';
+var PROMPT='Głos wstępny zapisany, wynik jeszcze nie został oceniony. Omów odpowiedź z drugą osobą (około 3 minut). Następnie kliknij wybraną odpowiedź ponownie, aby ją zatwierdzić, nawet jeśli jej nie zmieniasz.';
+function fb(group){
+return group.querySelector('.feedback')||(group.parentElement&&group.parentElement.querySelector('.feedback,small,.quiz-wyjasnienie,.quiz-feedback'))||group.querySelector('small,.quiz-wyjasnienie,.quiz-feedback');
+}
+document.querySelectorAll(SEL).forEach(function(group){
+if(group.dataset.piOn)return;group.dataset.piOn='1';
+group.addEventListener('click',function(e){
+var btn=e.target.closest?e.target.closest('button'):null;
+if(!btn||!group.contains(btn))return;
+var buttons=group.querySelectorAll('button');
+if(!group.dataset.piSolo){
+e.preventDefault();e.stopPropagation();
+buttons.forEach(function(b){b.style.outline='';b.classList.remove('pi-solo');});
+btn.classList.add('pi-solo');btn.style.outline='3px dashed currentColor';btn.style.outlineOffset='2px';
+group.dataset.piSolo='1';
+var f=fb(group);if(f)f.textContent=PROMPT;
+}else{
+buttons.forEach(function(b){b.style.outline='';b.classList.remove('pi-solo');});
+delete group.dataset.piSolo;
+}
+},true);
+});
+})();
+</script>
+</body></html>
