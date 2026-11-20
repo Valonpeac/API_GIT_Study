@@ -1,0 +1,31 @@
+1. Zbadaj punkt 28.  Grupy: 3
+Punkty szumu: 19 z 43. Tam znajduje się 1 punkt. 
+Gdy zmieniamy na 44 to otrzymujemy 2 punkty - brzeg.
+Gdy zmienaiamy na 60 to mamy że staje punkt rdzeniem i Punkty szumu: 4 z 43 Grupy: 3.
+
+3. Dla EPS = 0.70:
+
+ {'algorithm': 'K-Means', 'clusters': 5, 'noise': 0, 'scored_articles': 40, 'silhouette_cosine': 0.186, 'elapsed_ms': 52.0}
+{'algorithm': 'DBSCAN', 'clusters': 5, 'noise': 18, 'scored_articles': 22, 'silhouette_cosine': 0.337, 'elapsed_ms': 2.5}
+{'algorithm': 'Agglomerative', 'clusters': 5, 'noise': 0, 'scored_articles': 40, 'silhouette_cosine': 0.2, 'elapsed_ms': 0.9} 
+
+{'cluster_id': 0, 'noise': False, 'distance_to_core': 0.502, 'rule': 'nearest_core_within_eps'}
+{'cluster_id': -1, 'noise': True, 'distance_to_core': None, 'rule': 'nearest_core_within_eps', 'reason': 'out_of_vocabulary'}    
+
+Dla EPS = 0.74:
+
+{'algorithm': 'K-Means', 'clusters': 5, 'noise': 0, 'scored_articles': 40, 'silhouette_cosine': 0.186, 'elapsed_ms': 63.9}
+{'algorithm': 'DBSCAN', 'clusters': 6, 'noise': 8, 'scored_articles': 32, 'silhouette_cosine': 0.283, 'elapsed_ms': 3.2}
+{'algorithm': 'Agglomerative', 'clusters': 5, 'noise': 0, 'scored_articles': 40, 'silhouette_cosine': 0.2, 'elapsed_ms': 0.9}  
+
+{'cluster_id': 0, 'noise': False, 'distance_to_core': 0.502, 'rule': 'nearest_core_within_eps'}
+{'cluster_id': -1, 'noise': True, 'distance_to_core': None, 'rule': 'nearest_core_within_eps', 'reason': 'out_of_vocabulary'}        
+
+Dla EPS: 0.79: 
+
+{'algorithm': 'K-Means', 'clusters': 5, 'noise': 0, 'scored_articles': 40, 'silhouette_cosine': 0.186, 'elapsed_ms': 61.6}
+{'algorithm': 'DBSCAN', 'clusters': 5, 'noise': 0, 'scored_articles': 40, 'silhouette_cosine': 0.191, 'elapsed_ms': 2.7}
+{'algorithm': 'Agglomerative', 'clusters': 5, 'noise': 0, 'scored_articles': 40, 'silhouette_cosine': 0.2, 'elapsed_ms': 0.6}        
+
+{'cluster_id': 0, 'noise': False, 'distance_to_core': 0.451, 'rule': 'nearest_core_within_eps'}
+{'cluster_id': -1, 'noise': True, 'distance_to_core': None, 'rule': 'nearest_core_within_eps', 'reason': 'out_of_vocabulary'}
